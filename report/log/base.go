@@ -10,22 +10,25 @@ type base struct {
 	value string
 }
 
-func (l base) Count(value int64) {
+func (l *base) Count(value int64) {
 	l.value = fmt.Sprintf("%d", value)
 }
 
-func (l base) Gauge(value float64) {
+func (l *base) Gauge(value float64) {
 
-	l.value = fmt.Sprintf("%f", value)
+	l.value = fmt.Sprintf("%0.1f", value)
 }
 
-func (l base) Timer(interval []time.Duration) {
+func (l *base) Timer(interval []time.Duration) {
 	l.value = fmt.Sprintf("%d", interval)
 }
 
-func (l base) getValue() string {
+func (l *base) getValue() string {
+	if l.value != "0" && l.value != "0.0" {
+		return ""
+	}
 	return l.value
 }
-func (l base) getName() string {
+func (l *base) getName() string {
 	return l.name
 }

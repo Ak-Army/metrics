@@ -28,42 +28,49 @@ func NewLog(logger xlog.Logger, opts ...Options) *log {
 	return l
 }
 
-func (l log) Flush() {
+func (l *log) Flush() {
 	f := xlog.F{}
 	for _, r := range l.reports {
-		f[r.getName()] = r.getValue()
+		v := r.getValue()
+		if v == "" {
+			continue
+		}
+		f[r.getName()] = v
+	}
+	if len(f) == 0 {
+		return
 	}
 	l.log.OutputF(l.level, 0, l.message, f, nil)
 }
 
-func (l log) AllocateCounter(name string) report.Count {
-	lr := base{
+func (l *log) AllocateCounter(name string) report.Count {
+	lr := &base{
 		name: name,
 	}
 	l.reports = append(l.reports, lr)
 	return lr
 }
 
-func (l log) AllocateGauge(name string) report.Gauge {
-	lr := base{
+func (l *log) AllocateGauge(name string) report.Gauge {
+	lr := &base{
 		name: name,
 	}
 	l.reports = append(l.reports, lr)
 	return lr
 }
 
-func (l log) AllocateTimer(name string) report.Timer {
-	lr := base{
+func (l *log) AllocateTimer(name string) report.Timer {
+	lr := &base{
 		name: name,
 	}
 	l.reports = append(l.reports, lr)
 	return lr
 }
 
-func (l log) AllocateHistogram(name string, buckets bucket.ValueBucket) report.Histogram {
+func (l *log) AllocateHistogram(name string, buckets bucket.ValueBucket) report.Histogram {
 	pairs := buckets.Pairs()
-	lr := histogram{
-		base: base{
+	lr := &histogram{
+		base: &base{
 			name: name,
 		},
 		histogramPairs:  pairs,
@@ -73,10 +80,10 @@ func (l log) AllocateHistogram(name string, buckets bucket.ValueBucket) report.H
 	return lr
 }
 
-func (l log) AllocateDurationHistogram(name string, buckets bucket.DurationBucket) report.DurationHistogram {
+func (l *log) AllocateDurationHistogram(name string, buckets bucket.DurationBucket) report.DurationHistogram {
 	pairs := buckets.Pairs()
-	lr := durationHistogramReport{
-		base: base{
+	lr := &durationHistogramReport{
+		base: &base{
 			name: name,
 		},
 		histogramPairs:  pairs,
