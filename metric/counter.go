@@ -21,11 +21,7 @@ func (c *counter) Inc(v int64) {
 }
 
 func (c *counter) Report() {
-	delta := c.value()
-	if delta == 0 {
-		return
-	}
-	c.reporter.Count(delta)
+	c.reporter.Count(c.value())
 }
 
 func (c *counter) Snapshot() int64 {
@@ -38,6 +34,7 @@ func (c *counter) value() int64 {
 	if prev == curr {
 		return 0
 	}
-	atomic.StoreInt64(&c.prev, curr)
+	atomic.AddInt64(&c.curr, -curr)
+	atomic.AddInt64(&c.prev, -prev)
 	return curr - prev
 }
