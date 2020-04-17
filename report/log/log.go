@@ -14,12 +14,12 @@ type log struct {
 	reports []logReport
 }
 
-func NewLog(logger xlog.Logger, opts ...Options) *log {
+func New(logger xlog.Logger, opts ...Options) *log {
 	l := &log{
 		log: xlog.Copy(logger),
 		Option: Option{
 			level:   xlog.LevelInfo,
-			message: "Metrics",
+			message: "",
 		},
 	}
 	for _, o := range opts {
@@ -29,23 +29,26 @@ func NewLog(logger xlog.Logger, opts ...Options) *log {
 }
 
 func (l *log) Flush() {
-	f := xlog.F{}
+	logLines := map[string]xlog.F{}
 	for _, r := range l.reports {
 		v := r.getValue()
 		if v == "" {
 			continue
 		}
-		f[r.getName()] = v
+		logLines[r.getName()][r.getType()] = v
 	}
-	if len(f) == 0 {
+	if len(logLines) == 0 {
 		return
 	}
-	l.log.OutputF(l.level, 0, l.message, f, nil)
+	for n, f := range logLines {
+		l.log.OutputF(l.level, 0, l.message+n, f, nil)
+	}
 }
 
 func (l *log) AllocateCounter(name string) report.Count {
 	lr := &base{
-		name: name,
+		name:     name,
+		typeName: "Count",
 	}
 	l.reports = append(l.reports, lr)
 	return lr
@@ -53,7 +56,8 @@ func (l *log) AllocateCounter(name string) report.Count {
 
 func (l *log) AllocateGauge(name string) report.Gauge {
 	lr := &base{
-		name: name,
+		name:     name,
+		typeName: "Gauge",
 	}
 	l.reports = append(l.reports, lr)
 	return lr
@@ -61,7 +65,8 @@ func (l *log) AllocateGauge(name string) report.Gauge {
 
 func (l *log) AllocateTimer(name string) report.Timer {
 	lr := &base{
-		name: name,
+		name:     name,
+		typeName: "Timer",
 	}
 	l.reports = append(l.reports, lr)
 	return lr
@@ -71,7 +76,8 @@ func (l *log) AllocateHistogram(name string, buckets bucket.ValueBucket) report.
 	pairs := buckets.Pairs()
 	lr := &histogram{
 		base: &base{
-			name: name,
+			name:     name,
+			typeName: "Histogram",
 		},
 		histogramPairs:  pairs,
 		histogramValues: make([]string, len(pairs)),
@@ -84,7 +90,8 @@ func (l *log) AllocateDurationHistogram(name string, buckets bucket.DurationBuck
 	pairs := buckets.Pairs()
 	lr := &durationHistogramReport{
 		base: &base{
-			name: name,
+			name:     name,
+			typeName: "DurationHistogram",
 		},
 		histogramPairs:  pairs,
 		histogramValues: make([]string, len(pairs)),
